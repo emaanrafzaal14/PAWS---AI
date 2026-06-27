@@ -20,7 +20,7 @@ LABELS = ["Injured", "Uninjured"]
 
 # 🚨 PASTE YOUR NGO EMAIL DETAILS HERE
 SENDER_EMAIL = "reham4strays@gmail.com"      
-SENDER_PASSWORD = "ucht cbdi uxrq kwni" 
+SENDER_PASSWORD = "uchtcbdiuxrqkwni" 
 RECEIVER_EMAIL = "reham4strays@gmail.com"    
 CAMERA_LOCATION = "NUST Campus, Islamabad"
 
