@@ -1,3 +1,0 @@
-injured_cat
-uninjured_cat
-other
