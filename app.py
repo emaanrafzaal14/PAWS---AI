@@ -13,7 +13,7 @@ st.write("Real-time live video tracking for animal classification.")
 
 # --- CONFIGURATION ---
 # Replace this placeholder link with your n8n Test URL
-N8N_WEBHOOK_URL = "https://your-n8n-instance.com"
+N8N_WEBHOOK_URL = "https://emaanafzaal.app.n8n.cloud/webhook-test/2b6aab9e-413c-4388-a72d-c055be3d7701"
 COOLDOWN_SECONDS = 30  
 
 def load_labels(path="label.txt"):
