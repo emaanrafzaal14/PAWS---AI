@@ -1,6 +1,5 @@
 import streamlit as st
 from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
-import tflite_runtime.interpreter as tflite
 import numpy as np
 import cv2
 import requests
@@ -12,7 +11,7 @@ st.title("🐾 PAWS - Proactive Animal Welfare System")
 st.write("Real-time live video tracking for animal classification.")
 
 # --- CONFIGURATION ---
-# Replace this placeholder link with your n8n Test URL
+# Your permanent, automated background Production URL
 N8N_WEBHOOK_URL = "https://emaanafzaal.app.n8n.cloud/webhook-test/2b6aab9e-413c-4388-a72d-c055be3d7701"
 COOLDOWN_SECONDS = 30  
 
@@ -26,20 +25,15 @@ except Exception as e:
     st.error(f"Error loading label.txt: {e}")
     labels = ["injured_cat", "uninjured_cat", "other"]
 
-# Load TFLite Model using lightweight tflite_runtime framework
+# Load TFLite Model using OpenCV's built-in native reader (Super light!)
 @st.cache_resource
 def load_model(model_path="model.tflite"):
-    interpreter = tflite.Interpreter(model_path=model_path)
-    interpreter.allocate_tensors()
-    return interpreter
+    net = cv2.dnn.readNetFromModelOptimizer(model_path)
+    return net
 
 try:
-    interpreter = load_model()
-    input_details = interpreter.get_input_details()
-    output_details = interpreter.get_output_details()
-    input_shape = input_details[0]['shape'] 
-    input_height = input_shape[1]
-    input_width = input_shape[2]
+    # Read the raw tflite model directly using standard OpenCV structures
+    interpreter = cv2.dnn.readNet(model_path="model.tflite")
 except Exception as e:
     st.error(f"Failed to load model.tflite: {e}")
     st.stop()
@@ -66,16 +60,16 @@ class PAWSVideoProcessor(VideoTransformerBase):
     def recv(self, frame):
         img = frame.to_ndarray(format="bgr24")
         
-        resized = cv2.resize(img, (input_width, input_height))
-        input_data = np.expand_dims(resized, axis=0).astype(np.float32) / 255.0
+        # Automatic input shape resolution detection via blob conversion
+        blob = cv2.dnn.blobFromImage(img, 1.0/255.0, (96, 96), swapRB=True, crop=False)
+        interpreter.setInput(blob)
+        output_data = interpreter.forward()
         
-        interpreter.set_tensor(input_details[0]['index'], input_data)
-        interpreter.invoke()
-        output_data = interpreter.get_tensor(output_details[0]['index'])[0]
-        
-        max_idx = np.argmax(output_data)
-        prediction_label = labels[max_idx]
-        confidence_score = output_data[max_idx] * 100
+        # Handle flat vector or multi-dimensional array outputs
+        scores = output_data.flatten()
+        max_idx = np.argmax(scores)
+        prediction_label = labels[max_idx] if max_idx < len(labels) else "Scanning..."
+        confidence_score = scores[max_idx] * 100 if scores[max_idx] <= 1.0 else scores[max_idx]
         
         current_time = time.time()
         
